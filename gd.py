@@ -2,6 +2,7 @@ import networkx as nx
 import logging
 import sys
 import time
+import random
 
 def draw_graph(G):
     pos = nx.spring_layout(G)
@@ -32,7 +33,9 @@ class Point(object):
         self.z=z
     def __sub__(self, other):
         return ((self.x - other.x)**2 + (self.y - other.y)**2 + (self.z - other.z)**2)**(0.5)
-
+    
+    def __repr__(self):
+        return ("x:{0} y:{1} z:{2}".format(self.x,self.y,self.z))
 class Rectangle(object):
     def __init__(self, bottom_left, top_left, top_right, bottom_right):
         self.bottom_left = bottom_left
@@ -42,61 +45,90 @@ class Rectangle(object):
 
 
 class Node(object):
-    def __init__(self, nid, x, y, z ):
-        self.nid = nid
-        self.x=x
-        self.y=y
-        self.z=z
-        
+    def __init__(self, nid, point):
+        self.id = nid
+        self.co_ordinates=point
+    def __repr__(self):
+        return ("ID: {0} x:{1} y:{2} z:{3}".format(self.id, self.co_ordinates.x,self.co_ordinates.y,self.co_ordinates.z))
     def get_position(self):
-        return ("x:{0} y:{0} z:{0}".format(self.x,self.y,self.z))
-        
+        return ("x:{0} y:{0} z:{0}".format(self.co_ordinates.x,self.co_ordinates.y,self.co_ordinates.z))
+    def __sub__(self, other):
+        return self.co_ordinates-other.co_ordinates    
 class WSNDeployer(object):
     
-    def __init__(self, no_of_nodes = 3000, x=100,y=100,z=100, radio_range = 15, min_distance = 2):
+    def __init__(self, no_of_nodes = 3000, x=20,y=20,z=20, radio_range = 15, min_distance = 2):
         
         self.no_of_nodes = no_of_nodes
         self.x,self.y,self.z=x,y,z
         self.distance = min_distance
         self.nodes = []
-    
-    def place_nodes(self, i, j, k, step=10):
-        pass
+        self.radio_range = radio_range
+        
+        self.counter=0; #node ids
+        self.graph = nx.Graph()
+        
+    def get_nodes_info(self):
+        for node in self.nodes:
+            print node
+            
+    def place_node(self, i, j, k, step):
+        """ Need to implement min distance between nodes."""
+        point = Point(random.randint(i,i+step), random.randint(j,j+step), random.randint(k, k+step))
+        n = Node(self.counter, point)
+        self.nodes.append(n)
+        self.counter+=1
+        return True
+                
+    def place_nodes(self, i, j, k, step=10, no_of_nodes_in_sub_volume=3):
+        for l in range(no_of_nodes_in_sub_volume):
+            self.place_node(i,j,k, step)
         
     def deploy(self):
-        step = 10
+        step = 10    
         for i in range(0,self.x,step):
             for j in range(0, self.y, step):
                 for k in range(0, self.z, step):
-                    place_nodes(i, j, k, step)
-
-"""
-def prepare_graph():
-    #global settings;
-    graph = nx.Graph() 
-    graph.add_node('s', name = "source", index= 's')
-    graph.add_node('t', name = "destination",index='t' )
-    for i in range(settings['nodes']):
-        graph.add_node(i)
-    edges = []
-    edges.append(('s',0,1))
-    edges.append(('s',1,1))
-    edges.append(('s',2,1))
-    for i in range(settings['nodes']):
-        if i+1<settings['nodes']: edges.append((i, i+1,1))
-        if i+2<settings['nodes']: edges.append((i,i+2,1))
-        if i+3<settings['nodes']: edges.append((i,i+3,1))
-    edges.append((settings['nodes']-3,'t',1))
-    edges.append((settings['nodes']-2,'t',1))
-    edges.append((settings['nodes']-1,'t',1))
+                    self.place_nodes(i, j, k, step, )
+   
+    def build_graph(self):
+        for node in self.nodes:
+            self.graph.add_node(node.id, info = node)
+        edges = []
+        for i in range(0, len(self.nodes)):
+            for j in range(i+1, len(self.nodes)):
+                if (self.nodes[i]-self.nodes[j] < self.radio_range):
+                  edges.append((self.nodes[i].id, self.nodes[j].id,1))   
+        self.graph.add_weighted_edges_from(edges)
+        draw_graph(self.graph)
     
-    graph.add_weighted_edges_from(edges)
-    draw_graph(graph)
-    return graph
-"""
+    def pre_process(self, source_id, sink_id):
+        self.all_shortest_paths(sink_id)
+        
+    def simulate(self):
+        sink_id = random.randint(0, self.counter)
+        flag = True
+        while(flag):
+            source_id = random.randint(0, self.counter)
+            if source_id != sink_id:
+                flag=False
+        print 'source:', source_id, 'Sink:', sink_id
+        self.pre_process(source_id, sink_id)
+        
+    def all_shortest_paths(self, sink):
+        g = nx.shortest_path(self.graph, target = sink)
+        for node in self.graph:
+            #print g[node] #uncomment these to know whats going on
+            self.graph.node[node]['hop_cout']=len(g[node])-1
+            
+        
+
+
 def main():
-    #prepare_graph()
-    #g=GradeDiffusion(graph)
-    pass
+    w=WSNDeployer()
+    w.deploy()
+    w.build_graph()
+    w.simulate()
+    #w.get_nodes_info()
+    
 if __name__=="__main__":
     main()
