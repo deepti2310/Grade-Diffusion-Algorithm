@@ -62,7 +62,6 @@ class WSNDeployer(object):
     
     def place_nodes(self, i, j, k, step=10):
         pass
-        
     def deploy(self):
         step = 10
         for i in range(0,self.x,step):
