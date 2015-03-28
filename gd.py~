@@ -52,7 +52,7 @@ class Node(object):
         return ("ID: {0} x:{1} y:{2} z:{3}".format(self.id, self.co_ordinates.x,self.co_ordinates.y,self.co_ordinates.z))
     def get_position(self):
         return ("x:{0} y:{0} z:{0}".format(self.co_ordinates.x,self.co_ordinates.y,self.co_ordinates.z))
-    def __sub__(self, other):
+    def distance(self, other):
         return self.co_ordinates-other.co_ordinates    
 class WSNDeployer(object):
     
@@ -96,7 +96,7 @@ class WSNDeployer(object):
         edges = []
         for i in range(0, len(self.nodes)):
             for j in range(i+1, len(self.nodes)):
-                if (self.nodes[i]-self.nodes[j] < self.radio_range):
+                if (self.nodes[i].distance(self.nodes[j])< self.radio_range):
                   edges.append((self.nodes[i].id, self.nodes[j].id,1))   
         self.graph.add_weighted_edges_from(edges)
         draw_graph(self.graph)
