@@ -3,7 +3,7 @@ import logging
 import sys
 import time
 import random
-
+from tabulate import tabulate #pip install tabulate
 def draw_graph(G):
     pos = nx.spring_layout(G)
     nx.draw_networkx_nodes(G, pos, node_size = 700)
@@ -45,9 +45,17 @@ class Rectangle(object):
 
 
 class Node(object):
-    def __init__(self, nid, point):
+    def __init__(self, nid, point, energy=3600):
         self.id = nid
         self.co_ordinates=point
+        self.energy = 3600
+    
+    def set_energy(self, n):
+        self.energy = n
+    
+    def reduce_energy(self, r):
+        self.energy -= r
+    
     def __repr__(self):
         return ("ID: {0} x:{1} y:{2} z:{3}".format(self.id, self.co_ordinates.x,self.co_ordinates.y,self.co_ordinates.z))
     def get_position(self):
@@ -62,8 +70,7 @@ class WSNDeployer(object):
         self.x,self.y,self.z=x,y,z
         self.distance = min_distance
         self.nodes = []
-        self.radio_range = radio_range
-        
+        self.radio_range = radio_range        
         self.counter=0; #node ids
         self.graph = nx.Graph()
         
@@ -99,30 +106,64 @@ class WSNDeployer(object):
                 if (self.nodes[i].distance(self.nodes[j]) < self.radio_range):
                   edges.append((self.nodes[i].id, self.nodes[j].id,1))   
         self.graph.add_weighted_edges_from(edges)
-        draw_graph(self.graph)
-    
-    def pre_process(self, source_id, sink_id):
-        self.all_shortest_paths(sink_id)
+        #draw_graph(self.graph)
         
+    def pre_process(self, source_id, sink_id):
+        g = nx.shortest_path(self.graph, target = sink_id)
+        #create grade values for each node
+        for node in self.graph:
+            self.graph.node[node]['grade_value']=len(g[node])-1
+            #self.graph.node[node]['target_node']=sink_id
+        #create grade table
+        for node in self.graph:
+            table=[]
+            #print node, self.get_grade_value(node), self.graph.neighbors(node)
+            for neighbor in self.graph.neighbors(node):
+                #relay nodes are which nodes grade value is less than current node and with in the vicincity
+                if self.get_grade_value(neighbor) < self.get_grade_value(node):
+                    entry={}
+                    entry['relay_node']=neighbor
+                    entry['grade_value']=self.get_grade_value(neighbor) 
+                    table.append(entry)
+            self.graph.node[node]['routing_table']=table
+            print tabulate(self.graph.node[node]['grade_table'], headers="keys")
+        #create neighbors
+        for node in self.graph:
+            #neighbors are which are having same grade value as the current node and with in the vicincity
+            neighbors=[]
+            for adj_node in self.graph.neighbors(node):
+                if self.get_grade_value(adj_node) == self.get_grade_value(node):
+                    neighbors.append(adj_node)
+            self.graph.node[node]['neighbors']=neighbors
+          
     def simulate(self):
         sink_id = random.randint(0, self.counter)
-        flag = True
+            flag = True
         while(flag):
             source_id = random.randint(0, self.counter)
             if source_id != sink_id:
                 flag=False
         print 'source:', source_id, 'Sink:', sink_id
         self.pre_process(source_id, sink_id)
+    
+    def get_routing_table(self,node):
+        routing_table = self.graph.node[node]['routing_table']
+        return routing_table
+    
+    def get_payload_value(self, node):
+        payload_value = None
+        return payload_value
         
-    def all_shortest_paths(self, sink):
-        g = nx.shortest_path(self.graph, target = sink)
-        for node in self.graph:
-            #print g[node] #uncomment these to know whats going on
-            self.graph.node[node]['hop_cout']=len(g[node])-1
+    def get_grade_value(self,node):
+        return self.graph.node[node]['grade_value']
+       
+    def get_neighbors(self, node):
+        return self.graph.node[node]['neighbors']
             
+    def get_remaining_energy(self, node):
+        remaining_energy = None
+        return remaining_energy
         
-
-
 def main():
     w=WSNDeployer()
     w.deploy()
