@@ -115,7 +115,7 @@ class WSNDeployer(object):
         try:
             nx.shortest_path(self.graph, source=source_id, target = sink_id)
         except Exception, e:
-            print e
+            #no path in between source and destination, so return false o
             return False
         
         g = nx.shortest_path(self.graph, target = sink_id)
@@ -123,7 +123,7 @@ class WSNDeployer(object):
             try:
                 self.graph.node[node]['grade_value']=len(g[node])-1
             except Exception,e:
-                #print "error", e
+                #for unreachable nodes make it infinity
                 self.graph.node[node]['grade_value']=float('inf')
         #init the payload values
         print self.graph.node[source_id]['grade_value']
