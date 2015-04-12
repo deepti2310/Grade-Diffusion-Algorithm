@@ -174,7 +174,7 @@ class WSNDeployer(object):
                 flag=False
         print 'source:', source_id, 'Sink:', sink_id
         self.pre_process(source_id, sink_id)
-    
+        #now begin the simulation part and update corresponding values accordingly
     def get_routing_table(self,node):
         routing_table = self.graph.node[node]['routing_table']
         return routing_table
