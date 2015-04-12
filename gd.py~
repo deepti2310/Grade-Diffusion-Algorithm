@@ -134,7 +134,7 @@ class WSNDeployer(object):
                     entry['overload']=0
                     table[neighbor]=entry
             self.graph.node[node]['routing_table']=table
-            print self.graph.node[node]['routing_table']
+            #print self.graph.node[node]['routing_table']
         
         #create neighbors
         for node in self.graph:
@@ -165,7 +165,10 @@ class WSNDeployer(object):
         self.graph.node[node]['payload_value']+=increment
     
           
-    def simulate(self):
+    def simulate(self, data_packages = None):
+        if not data_packages:
+            print "Expecting some data packages"
+            sys.exit(0)
         sink_id = random.randint(0, self.counter)
         flag = True
         while(flag):
@@ -174,7 +177,25 @@ class WSNDeployer(object):
                 flag=False
         print 'source:', source_id, 'Sink:', sink_id
         self.pre_process(source_id, sink_id)
-        #now begin the simulation part and update corresponding values
+        #now begin the simulation part and update corresponding values accordingly
+        sink = self.get_node_by_id(sink_id)
+        source = self.get_node_by_id(source_id)
+        print sink, '\n',source
+        for i in range(data_packages):
+            current_node = source
+            while (current_node != sink):
+                #select a node
+                #update payload of receiver
+                #update overload value in grading table of sender
+                #calculate the threshold L_th and based on that select neighbor node if overload of current node are over Lth    
+                pass
+            
+            
+            
+    def get_node_by_id(self, id):
+        return self.graph.node[id]
+    
+    
     def get_routing_table(self,node):
         routing_table = self.graph.node[node]['routing_table']
         return routing_table
@@ -197,7 +218,7 @@ def main():
     w=WSNDeployer()
     w.deploy()
     w.build_graph()
-    w.simulate()
+    w.simulate(data_packages=300)
     #w.get_nodes_info()
     
 if __name__=="__main__":
