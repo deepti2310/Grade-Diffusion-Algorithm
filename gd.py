@@ -124,9 +124,10 @@ class WSNDeployer(object):
                     entry={}
                     entry['relay_node']=neighbor
                     entry['grade_value']=self.get_grade_value(neighbor) 
+                    entry['overload']=0
                     table.append(entry)
             self.graph.node[node]['routing_table']=table
-            print tabulate(self.graph.node[node]['grade_table'], headers="keys")
+            print tabulate(self.graph.node[node]['routing_table'], headers="keys")
         #create neighbors
         for node in self.graph:
             #neighbors are which are having same grade value as the current node and with in the vicincity
@@ -135,10 +136,15 @@ class WSNDeployer(object):
                 if self.get_grade_value(adj_node) == self.get_grade_value(node):
                     neighbors.append(adj_node)
             self.graph.node[node]['neighbors']=neighbors
-          
+        
+    def update_payload(self, node):
+        pass
+    
+    def update_overload(self, node):
+        pass  
     def simulate(self):
         sink_id = random.randint(0, self.counter)
-            flag = True
+        flag = True
         while(flag):
             source_id = random.randint(0, self.counter)
             if source_id != sink_id:
