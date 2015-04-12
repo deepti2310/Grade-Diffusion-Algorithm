@@ -64,7 +64,7 @@ class Node(object):
         return self.co_ordinates-other.co_ordinates    
 class WSNDeployer(object):
     
-    def __init__(self, no_of_nodes = 3000, x=20,y=20,z=20, radio_range = 15, min_distance = 2):
+    def __init__(self, no_of_nodes = 3000, x=30,y=30,z=30, radio_range = 15, min_distance = 2):
         
         self.no_of_nodes = no_of_nodes
         self.x,self.y,self.z=x,y,z
@@ -114,34 +114,57 @@ class WSNDeployer(object):
         for node in self.graph:
             self.graph.node[node]['grade_value']=len(g[node])-1
             #self.graph.node[node]['target_node']=sink_id
+        
+        #init the payload values
+        for node in self.graph:
+            self.graph.node[node]['payload_value']=0
+        
+                
         #create grade table
         for node in self.graph:
-            table=[]
-            #print node, self.get_grade_value(node), self.graph.neighbors(node)
-            for neighbor in self.graph.neighbors(node):
+            table={}
+            #print node, self.get_grade_value(node), self.get_reachable_nodes(node)
+            for neighbor in self.get_reachable_nodes(node):
                 #relay nodes are which nodes grade value is less than current node and with in the vicincity
                 if self.get_grade_value(neighbor) < self.get_grade_value(node):
                     entry={}
+                    entry['from']=node
                     entry['relay_node']=neighbor
-                    entry['grade_value']=self.get_grade_value(neighbor) 
+                    entry['grade_value']=self.get_grade_value(neighbor)
                     entry['overload']=0
-                    table.append(entry)
+                    table[neighbor]=entry
             self.graph.node[node]['routing_table']=table
-            print tabulate(self.graph.node[node]['routing_table'], headers="keys")
+            print self.graph.node[node]['routing_table']
+        
         #create neighbors
         for node in self.graph:
             #neighbors are which are having same grade value as the current node and with in the vicincity
             neighbors=[]
-            for adj_node in self.graph.neighbors(node):
+            for adj_node in self.get_reachable_nodes(node):
                 if self.get_grade_value(adj_node) == self.get_grade_value(node):
                     neighbors.append(adj_node)
             self.graph.node[node]['neighbors']=neighbors
         
-    def update_payload(self, node):
-        pass
+        #outside nodes
+        for node in self.graph:
+            if node==sink_id:
+                continue #skip sink node
+            outside_node_flag=all([ self.get_grade_value(adj_node) <= self.get_grade_value(node) for adj_node in self.get_reachable_nodes(node)])
+            if outside_node_flag:
+                self.update_payload(node,increment=1)
+            #print node, self.get_payload(node)
+            
+    def get_reachable_nodes(self, node):
+        return self.graph.neighbors(node)
     
-    def update_overload(self, node):
-        pass  
+    
+    def get_payload(self, node):
+        return self.graph.node[node]['payload_value']
+    
+    def update_payload(self, node, increment=0):
+        self.graph.node[node]['payload_value']+=increment
+    
+          
     def simulate(self):
         sink_id = random.randint(0, self.counter)
         flag = True
