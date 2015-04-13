@@ -200,7 +200,12 @@ class GD(object):
         """
         for node in self.graph:
             self.graph.node[node]['payload']=len(self._outside_nodes(node))
-            
+    
+    def _payload(self, node):
+        """
+            return payload value of given node
+        """
+        return self.graph.node[node]['payload']
     def _graph_info(self):
          for node in self.graph:
             print self.graph.node[node]       
@@ -216,37 +221,52 @@ class GD(object):
         self._fill_neighbors()
         self._fill_payload_values()
         
-        for node in self.graph:
-            print node, self.graph.node[node], "-",self._reachable_nodes(node)
         
     def _select_relay_node(self, node):
         """
         Select a relay node to do data transfer
         1. First retrieve routing_table
-        2. capture the relay_nodes and its their payloads
-        3. choose one based on probability
+        2. capture the relay_nodes and its their payloads (return if there is any relay load with payload 0
+        3. choose one relay node based on probability
+        4. return the selected relay node
         """
+        #Step:1
         routing_table = self._routing_table(node)
+        payloads_dict = OrderedDict([(entry['relay_node'], self._payload(entry['relay_node']))for entry in routing_table])
+        #Step: 2
+        for r,payload in payloads_dict.iteritems():
+            if payload == 0:
+                return r 
+        #else
+        cdf_dict = OrderedDict()
+        payloads_sum=sum([1.0/payload for node,payload in payloads_dict.iteritems()]) 
         
-        node = routing_table[0]['relay_node']
-        return node
+        r=random.random()
+        s=0
+        for node, payload in payloads_dict.iteritems():
+            s+=(1.0/payload)
+            if r <= s/payloads_sum:
+                return node
+                
+                
+        
+       
         
     def _routing_table(self, node):
         return self.graph.node[node]['routing_table']
+    
     def simulate(self):
         source, sink = self._random_source_sink()
         self._pre_process(sink)
         for i in range(self.datapackages):
-          print "----------------------"
-          print source, sink
           current_node = source
           while(current_node != sink):
             relay_node = self._select_relay_node(node=current_node)
-            print current_node, self._inside_nodes(current_node)
             current_node = relay_node
             
+            
 def main():
-    n=NetworkDeployer(x=50, y=50, radio_range = 5)
+    n=NetworkDeployer(x=50, y=50, radio_range = 7)
     n.deploy()
     n.build_graph()
     gd=GD(n.graph, datapackages = 300) #pass the built-up graph to GD
