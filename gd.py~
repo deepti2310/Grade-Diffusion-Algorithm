@@ -132,15 +132,15 @@ class WSNDeployer(object):
         for node in self.graph:
             table={}
             #print node, self.get_grade_value(node), self.get_reachable_nodes(node)
-            for neighbor in self.get_reachable_nodes(node):
+            for adj_node in self.get_reachable_nodes(node):
                 #relay nodes are which nodes grade value is less than current node and with in the vicincity
-                if self.get_grade_value(neighbor) < self.get_grade_value(node):
+                if self.get_grade_value(adj_node) < self.get_grade_value(node):
                     entry={}
                     entry['from']=node
-                    entry['relay_node']=neighbor
-                    entry['grade_value']=self.get_grade_value(neighbor)
+                    entry['relay_node']=adj_node
+                    entry['grade_value']=self.get_grade_value(adj_node)
                     entry['overload']=0
-                    table[neighbor]=entry
+                    table[adj_node]=entry
             self.graph.node[node]['routing_table']=table
             #print self.graph.node[node]['routing_table']
         
@@ -203,7 +203,7 @@ class WSNDeployer(object):
                     increment = self.get_payload_value(relay_node)*1.0/self.get_grade_value(relay_node)
                     self.update_payload(relay_node, increment=increment)
                 #update overload values in grading table of sender
-                print self.get_routing_table(current_node)    
+                print self.get_routing_table(current_node),"\n"    
                 current_node = relay_node
                 
                 

@@ -132,15 +132,15 @@ class WSNDeployer(object):
         for node in self.graph:
             table={}
             #print node, self.get_grade_value(node), self.get_reachable_nodes(node)
-            for neighbor in self.get_reachable_nodes(node):
+            for adj_node in self.get_reachable_nodes(node):
                 #relay nodes are which nodes grade value is less than current node and with in the vicincity
-                if self.get_grade_value(neighbor) < self.get_grade_value(node):
+                if self.get_grade_value(adj_node) < self.get_grade_value(node):
                     entry={}
                     entry['from']=node
-                    entry['relay_node']=neighbor
-                    entry['grade_value']=self.get_grade_value(neighbor)
+                    entry['relay_node']=adj_node
+                    entry['grade_value']=self.get_grade_value(adj_node)
                     entry['overload']=0
-                    table[neighbor]=entry
+                    table[adj_node]=entry
             self.graph.node[node]['routing_table']=table
             #print self.graph.node[node]['routing_table']
         
