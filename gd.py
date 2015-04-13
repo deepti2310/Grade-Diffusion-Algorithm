@@ -4,6 +4,7 @@ import sys
 import time
 import random
 from tabulate import tabulate #pip install tabulate
+from collections import OrderedDict
 def draw_graph(G):
     pos = nx.spring_layout(G)
     nx.draw_networkx_nodes(G, pos, node_size = 700)
@@ -110,8 +111,6 @@ class WSNDeployer(object):
         
     def pre_process(self, source_id, sink_id):
         #create grade values for each node
-        
-        
         try:
             nx.shortest_path(self.graph, source=source_id, target = sink_id)
         except Exception, e:
@@ -126,12 +125,9 @@ class WSNDeployer(object):
                 #for unreachable nodes make it infinity
                 self.graph.node[node]['grade_value']=float('inf')
         #init the payload values
-        print self.graph.node[source_id]['grade_value']
-        
         for node in self.graph:
             self.graph.node[node]['payload_value']=0
-        
-                
+            
         #create grade table
         for node in self.graph:
             table={}
@@ -194,29 +190,52 @@ class WSNDeployer(object):
                     sflag=False
             print 'source:', source_id, 'Sink:', sink_id
             if self.pre_process(source_id, sink_id): 
-                #make sure that graph is connected, and we have a connection between source and destination
+                #make sure that we have a path in between source and destination
                 flag = False
         
         for i in range(data_packages):
             current_node = source_id
             while (current_node != sink_id):
                 #select the next relay node
-                current_node=self.select_relay_node(current_node) #next node
-                
+                relay_node=self.select_relay_node(current_node) #next node
                 #update payload of receiver
-                #update overload value in grading table of sender
+                if relay_node != sink_id: #update if the receiver is not sink
+                    increment = self.get_payload_value(relay_node)*1.0/self.get_grade_value(relay_node)
+                    self.update_payload(relay_node, increment=increment)
+                #update overload values in grading table of sender
+                print self.get_routing_table(current_node),"\n"    
+                current_node = relay_node
+                
+                
+                
                 #calculate the threshold L_th and based on that select neighbor node if overload of current node are over Lth
-                #obtain routing table of current_node
                 
             break
                 
             
             
     def select_relay_node(self, current_node):
+        #print "----------------------"
         routing_table = self.get_routing_table(current_node)
         relay_nodes = [key for key in routing_table.iterkeys()]
-        return relay_nodes[0]
-                
+        payloads={}
+        for node in relay_nodes:
+            payloads[node]=self.get_payload_value(node)
+        #print payloads
+        #U_K = p_k ** (-1) / Sigma i in j P_i** (-1)
+        zero_payload_ones = [key for key,value in payloads.iteritems() if payloads[key]==0]
+        if zero_payload_ones:
+            return random.choice(zero_payload_ones)
+        else:
+            payload_values_sum = sum([1.0/value for key,value in payloads.iteritems()])
+            s=0
+            r = random.random()
+            for key,value in payloads.iteritems():
+                s+=(1.0/value)
+                #print s, r
+                if r < s/payload_values_sum:
+                    return key
+        return relay_nodes[-1]        
     def get_node_by_id(self, id):
         return self.graph.node[id]
     
@@ -226,8 +245,8 @@ class WSNDeployer(object):
         return routing_table
     
     def get_payload_value(self, node):
-        payload_value = None
-        return payload_value
+        return self.graph.node[node]['payload_value']
+        
         
     def get_grade_value(self,node):
         return self.graph.node[node]['grade_value']
