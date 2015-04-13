@@ -317,7 +317,7 @@ class GD(object):
             relay_node = self._select_relay_node(node=current_node)
             #update routing table over-load values of current node
             self._update_routing_table(current_node, relay_node)          
-            #update payload values, and overload value
+            #update payload values
             new_payload_value = self._payload(relay_node) + self._payload(relay_node)*1.0/self._grade_value(current_node)
             self._set_payload(node=relay_node,value = new_payload_value)
             current_node = relay_node
