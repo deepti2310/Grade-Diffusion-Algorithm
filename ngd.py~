@@ -187,6 +187,7 @@ class GD(object):
                 entry['current_node']=node
                 entry['relay_node']= inside_node
                 entry['grade_value']=self._grade_value(inside_node)
+                entry['overload']=self._payload(inside_node)
                 table.append(entry)
             self.graph.node[node]['routing_table']=table           
     
@@ -206,6 +207,13 @@ class GD(object):
             return payload value of given node
         """
         return self.graph.node[node]['payload']
+    
+    def _set_payload(self, node=None, value=None):
+        """
+        set payload of a node
+        """
+        self.graph.node[node]['payload']=value
+        
     def _graph_info(self):
          for node in self.graph:
             print self.graph.node[node]       
@@ -217,56 +225,92 @@ class GD(object):
         """
         sink = sink
         self._fill_grade_values(sink)
-        self._create_grade_table()
         self._fill_neighbors()
         self._fill_payload_values()
+        self._create_grade_table()
         
+    
+    def _threshold(self, current_node):
+        routing_table = self._routing_table(current_node)
         
     def _select_relay_node(self, node):
         """
         Select a relay node to do data transfer
         1. First retrieve routing_table
+        1.a compare the relay nodes overload with the threshold, if every relay node overload exceeds choose a random neighbor
         2. capture the relay_nodes and its their payloads (return if there is any relay load with payload 0
         3. choose one relay node based on probability
         4. return the selected relay node
         """
         #Step:1
         routing_table = self._routing_table(node)
-        payloads_dict = OrderedDict([(entry['relay_node'], self._payload(entry['relay_node']))for entry in routing_table])
+        overload_dict = OrderedDict([(entry['relay_node'], entry['overload'])for entry in routing_table])
+        
+        #step 1.a:
+        
+        
+        
         #Step: 2
-        for r,payload in payloads_dict.iteritems():
-            if payload == 0:
-                return r 
+        for n,overload in overload_dict.iteritems():
+            if overload == 0:
+                return n 
         #else
         cdf_dict = OrderedDict()
-        payloads_sum=sum([1.0/payload for node,payload in payloads_dict.iteritems()]) 
+        overload_sum=sum([1.0/overload for n,overload in overload_dict.iteritems()]) 
         
         r=random.random()
         s=0
-        for node, payload in payloads_dict.iteritems():
-            s+=(1.0/payload)
-            if r <= s/payloads_sum:
-                return node
-                
-                
-        
-       
-        
+        for n, overload in overload_dict.iteritems():
+            s+=(1.0/overload)
+            if r <= s/overload_sum:
+                return n
+    
     def _routing_table(self, node):
         return self.graph.node[node]['routing_table']
     
+    def _update_routing_table(self, node, relay_node):
+        """
+        update routing table
+        1. grab the current node routing table
+        2. find the relevant entry of relay_node
+        3. get payload_old, and find the new payload by using equation 2 p_new
+        4. update the overload by using equation 3
+        """
+        routing_table=self._routing_table(node)
+        index=None
+        for counter,entry in enumerate(routing_table):
+            if entry['relay_node']==relay_node:
+                index=counter #found the entry
+                break
+        
+        if index!=None:
+            #print '-',index
+            #print relay_node, index
+            p_old = self._payload(relay_node)
+            p_new = self._payload(relay_node) + self._payload(relay_node)*1.0/self._grade_value(node)
+            self.graph.node[node]['routing_table'][index]['overload']+=p_old+p_new
+            
     def simulate(self):
         source, sink = self._random_source_sink()
         self._pre_process(sink)
         for i in range(self.datapackages):
           current_node = source
+          print "--------------------------"
           while(current_node != sink):
+            print current_node
             relay_node = self._select_relay_node(node=current_node)
+            #update routing table over-load values of current node
+            self._update_routing_table(current_node, relay_node)          
+            #update payload values, and overload value
+            new_payload_value = self._payload(relay_node) + self._payload(relay_node)*1.0/self._grade_value(current_node)
+            self._set_payload(node=relay_node,value = new_payload_value)
+            
+            #
             current_node = relay_node
             
             
 def main():
-    n=NetworkDeployer(x=50, y=50, radio_range = 7)
+    n=NetworkDeployer(x=50, y=50, radio_range = 5)
     n.deploy()
     n.build_graph()
     gd=GD(n.graph, datapackages = 300) #pass the built-up graph to GD
