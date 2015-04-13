@@ -270,6 +270,7 @@ class GD(object):
         cdf_dict = OrderedDict()
         overload_sum=sum([1.0/overload for n,overload in overload_dict.iteritems()]) 
         
+        #step 3 and Step 4
         r=random.random()
         s=0
         for n, overload in overload_dict.iteritems():
@@ -319,7 +320,6 @@ class GD(object):
             #update payload values, and overload value
             new_payload_value = self._payload(relay_node) + self._payload(relay_node)*1.0/self._grade_value(current_node)
             self._set_payload(node=relay_node,value = new_payload_value)
-            
             current_node = relay_node
             seq.append(current_node) 
           print "Source:", source, " Sink:", sink, "Seq:", seq, " Len:", len(seq) #print the seq of nodes traversed
@@ -332,7 +332,7 @@ def main():
     n.deploy()
     n.build_graph()
     gd=GD(n.graph, datapackages = 300) #pass the built-up graph to GD
-    gd.simulate()
+    seq_list=gd.simulate()
     
 if __name__=="__main__":
     main()
