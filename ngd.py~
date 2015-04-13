@@ -21,17 +21,10 @@ logging.basicConfig(filename = 'gd.log', level = logging.DEBUG)
 
 class Node(object):
 
-    def __init__(self, nid, point, energy=3600):
+    def __init__(self, nid, point):
         self.id = nid
         self.co_ordinates=point
-        self.energy = energy
-    
-    def set_energy(self, n):
-        self.energy = n
-    
-    def reduce_energy(self, r):
-        self.energy -= r
-    
+  
     def __repr__(self):
         return ("ID: {0} x:{1} y:{2}".format(self.id, self.co_ordinates.x,self.co_ordinates.y))
     
@@ -63,7 +56,7 @@ class Point(object):
         return {'x':self.x, 'y':self.y}
 
          
-class WSNDeployer(object):
+class NetworkDeployer(object):
     def __init__(self, x=100, y=100, radio_range=10, min_distance=2):
         self.x=x
         self.y=y
@@ -121,33 +114,142 @@ class WSNDeployer(object):
         #show graph here
         
 class GD(object):
-    def __init__(self, graph, datapackages = 300):
+    def __init__(self, graph, datapackages = 300, node_energy = 3600):
         self.graph = graph
         self.datapackages = 300
-        self.nodes = []
     
     def get_nodes(self):
         pass
     
-    def random_source_sink(self):
+    def _random_source_sink(self):
+        """
+        make sure there is a path in between source and sink 
+        """
+        no_of_nodes = len(self.graph)
+        while(True):
+            source, sink = random.randint(0, no_of_nodes),random.randint(0, no_of_nodes)
+            try:
+                nx.shortest_path(self.graph, source=source, target = sink)
+                break
+            except: 
+                pass
+        return source, sink
+             
+    def _grade_value(self,node):
+        return self.graph.node[node]['grade_value']         
+    
+    def _reachable_nodes(self, node):
+        return self.graph.neighbors(node)
+    
+    def _fill_grade_values(self, sink):
+        """
+        Find Shortest distance from every node to sink, and make it as a grade value
+        if there are nodes which are unreachable from sink, make their grade value as 'infinite'
+        """
+        g = nx.shortest_path(self.graph, target = sink)
+        for node in self.graph:
+            try:
+                """
+                g[node] contains end points, so to count hop-count, just reduce it by 1
+                """
+                self.graph.node[node]['grade_value']=len(g[node])-1
+            except:
+                self.graph.node[node]['grade_value']=float('inf')
+                
+    def _inside_nodes(self, node):
+        inside_nodes = []
+        for adjacent_node in self._reachable_nodes(node):
+            if self._grade_value(adjacent_node) < self._grade_value(node):
+                 inside_nodes.append(adjacent_node)
+        return inside_nodes
+    
+    def _outside_nodes(self, node):
+        outside_nodes = []
+        for adjacent_node in self._reachable_nodes(node):
+            if self._grade_value(adjacent_node) >= self._grade_value(node):
+                 outside_nodes.append(adjacent_node)
+        return outside_nodes
+    
+    
+    def _neighbors(self, node):
+        neighbors = []
+        for adjacent_node in self._reachable_nodes(node):
+            if self._grade_value(adjacent_node) == self._grade_value(node):
+                 neighbors.append(adjacent_node)
+        return neighbors
+    
         
-        
-    def _pre_process(self,):
+    def _create_grade_table(self):
+        for node in self.graph:
+            table = []
+            for inside_node in self._inside_nodes(node):
+                entry = {}
+                entry['current_node']=node
+                entry['relay_node']= inside_node
+                entry['grade_value']=self._grade_value(inside_node)
+                table.append(entry)
+            self.graph.node[node]['routing_table']=table           
+    
+    def _fill_neighbors(self):
+        for node in self.graph:
+            self.graph.node[node]['neighbors']=self._neighbors(node)    
+    
+    def _fill_payload_values(self):
+        """ 
+        Payload values 
+        """
+        for node in self.graph:
+            self.graph.node[node]['payload']=len(self._outside_nodes(node))
+            
+    def _graph_info(self):
+         for node in self.graph:
+            print self.graph.node[node]       
+    
+    def _pre_process(self,sink):
         """
         1. First generate sink and source, and make sure that sink is reachable from source
         
         """
-        source, sink = self.random_source_sink()
-            
-        pass
+        sink = sink
+        self._fill_grade_values(sink)
+        self._create_grade_table()
+        self._fill_neighbors()
+        self._fill_payload_values()
+        
+        for node in self.graph:
+            print node, self.graph.node[node], "-",self._reachable_nodes(node)
+        
+    def _select_relay_node(self, node):
+        """
+        Select a relay node to do data transfer
+        1. First retrieve routing_table
+        2. capture the relay_nodes and its their payloads
+        3. choose one based on probability
+        """
+        routing_table = self._routing_table(node)
+        
+        node = routing_table[0]['relay_node']
+        return node
+        
+    def _routing_table(self, node):
+        return self.graph.node[node]['routing_table']
     def simulate(self):
-        self._pre_process()
-        pass
+        source, sink = self._random_source_sink()
+        self._pre_process(sink)
+        for i in range(self.datapackages):
+          print "----------------------"
+          print source, sink
+          current_node = source
+          while(current_node != sink):
+            relay_node = self._select_relay_node(node=current_node)
+            print current_node, self._inside_nodes(current_node)
+            current_node = relay_node
+            
 def main():
-    w=WSNDeployer(x=50, y=50, radio_range = 15)
-    w.deploy()
-    w.build_graph()
-    gd=GD(w.graph) #pass the built-up graph to GD
+    n=NetworkDeployer(x=50, y=50, radio_range = 5)
+    n.deploy()
+    n.build_graph()
+    gd=GD(n.graph, datapackages = 300) #pass the built-up graph to GD
     gd.simulate()
     
 if __name__=="__main__":
