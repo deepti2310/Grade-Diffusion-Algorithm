@@ -1,6 +1,6 @@
 import pygame, sys
 from pygame.locals import *
-
+import math
 class Color(object):
     BLACK = (0, 0, 0)
     WHITE = (255, 255, 255)
@@ -11,35 +11,43 @@ class Color(object):
     
     def __init__(self):
         pass
+
+def angle_wrt_x(A,B):
+    """Return the angle between B-A and the positive x-axis.
+    Values go from 0 to pi in the upper half-plane, and from 
+    0 to -pi in the lower half-plane.
+    """
+    ax, ay = A
+    bx, by = B
+    return math.atan2(by-ay, bx-ax)
+
+def dist(A,B):
+    ax, ay = A
+    bx, by = B
+    return math.hypot(bx-ax, by-ay)
     
 class NetSim(object):
     def __init__(self, f=None):
         self.f=f
         self.FPS=30
         self.fpsClock = pygame.time.Clock()
+        self.points = [(100,200), (200, 300), (200,100)]
+        self.node_radius=10
+        
+    def draw_circle(self, surf=None, color=Color.BLUE, center_point=None, width=0):
+        pygame.draw.circle(surf, color, center_point, self.node_radius, width)
     
-    def draw_circle(self, surf=None, color=Color.BLUE, center_point=None, radius = None, width=0):
-        pygame.draw.circle(surf, color, center_point, radius, width)
-    
-    def draw_line(self, surf=None, color=Color.RED, p1 = None, p2=None, width=0):
+    def draw_edge(self, surf=None, color=Color.RED, p1 = None, p2=None, width=0):
         pygame.draw.line(surf, color,p1, p2, width)
     
     def paint(self):
-        
-        #########################
-        self.p1=(100,200)
-        self.p2=(200,300)
-        self.p3=(300,400)
-        ########################
-        
-        self.draw_line(self.DISPLAYSURF, Color.RED, self.p1, self.p2, 4)
-        self.draw_line(self.DISPLAYSURF, Color.RED, self.p2, self.p3, 4)
-        
+        for i in range (len(self.points)-1):
+            self.draw_edge(self.DISPLAYSURF, Color.RED, self.points[i], self.points[i+1], 1)
+            
         self.squareImg = pygame.image.load('square1.png')
-        self.draw_circle(surf=self.DISPLAYSURF, color=Color.BLUE, center_point=self.p1, radius = 10)
-        self.draw_circle(surf=self.DISPLAYSURF, color=Color.BLUE, center_point=self.p2, radius = 10)
-        self.draw_circle(surf=self.DISPLAYSURF, color=Color.BLUE, center_point=self.p3, radius = 10)
-    
+        for p in self.points:
+            self.draw_circle(surf=self.DISPLAYSURF, color=Color.BLUE, center_point=p,  )
+            
     
     def get_position(self, p1, p2, increment=10):
         p1_x,p1_y=p1
@@ -55,19 +63,10 @@ class NetSim(object):
         pygame.display.set_caption("Grade Diffusion")
         self.paint()
         
-        x=self.p1[0]
-        y=self.p1[1]
         while True:
             self.DISPLAYSURF.fill(Color.WHITE)
             self.paint()
-            source_point = self.p1
-            end_point = self.p2
-            
-            self.DISPLAYSURF.blit(self.squareImg, (x,y))
-            dx,dy=self.get_position(source_point,end_point, )
-            x+=dx
-            y+=dy       
-            #squareImg.scroll(x, y)
+            self.DISPLAYSURF.blit(self.squareImg, (10,20))
             for event in pygame.event.get():
                 if event.type == QUIT:
                     pygame.quit()

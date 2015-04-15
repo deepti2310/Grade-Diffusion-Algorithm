@@ -191,7 +191,7 @@ class GD(object):
                 entry['current_node']=node
                 entry['relay_node']= inside_node
                 entry['grade_value']=self._grade_value(inside_node)
-                entry['overload']=self._payload(inside_node)
+                entry['overload']=0
                 table.append(entry)
             self.graph.node[node]['routing_table']=table           
             
