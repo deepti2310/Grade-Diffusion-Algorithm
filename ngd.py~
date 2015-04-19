@@ -356,6 +356,7 @@ def main():
     n.deploy()
     n.build_graph()
     gd=GD(n.graph, datapackages = 300) #pass the built-up graph to GD
+    
     for cycle in range(0, 100):
         seq_list=gd.simulate()
     print gd.packet_loss

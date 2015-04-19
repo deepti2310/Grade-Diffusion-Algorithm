@@ -352,10 +352,11 @@ class GD(object):
         return seq_list
             
 def main():
-    n=NetworkDeployer(x=100, y=100, radio_range = 10)
+    n=NetworkDeployer(x=200, y=200, radio_range = 10)
     n.deploy()
     n.build_graph()
     gd=GD(n.graph, datapackages = 300) #pass the built-up graph to GD
+    
     for cycle in range(0, 100):
         seq_list=gd.simulate()
     print gd.packet_loss
