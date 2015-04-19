@@ -142,7 +142,7 @@ class GD(object):
         """
         no_of_nodes = len(self.graph)
         while(True):
-            source, sink = random.randint(0, no_of_nodes),random.randint(0, no_of_nodes)
+            source, sink = random.randint(0, no_of_nodes-1),random.randint(0, no_of_nodes-1)
             if not self.graph.node[source]['node_obj'].is_alive():
                 continue
             try:
@@ -316,8 +316,6 @@ class GD(object):
                 break
         
         if index!=None:
-            #print '-',index
-            #print relay_node, index
             p_old = self._payload(relay_node)
             p_new = self._payload(relay_node) + self._payload(relay_node)*1.0/self._grade_value(node)
             self.graph.node[node]['routing_table'][index]['overload']+=p_old+p_new
@@ -357,7 +355,7 @@ def main():
     n.build_graph()
     gd=GD(n.graph, datapackages = 300) #pass the built-up graph to GD
     
-    for cycle in range(0, 100):
+    for cycle in range(0, 300):
         seq_list=gd.simulate()
     print gd.packet_loss
 if __name__=="__main__":
