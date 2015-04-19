@@ -4,7 +4,8 @@ import sys
 import time
 import random
 from tabulate import tabulate #pip install tabulate
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
+
 def draw_graph(G):
     pos = nx.spring_layout(G)
     nx.draw_networkx_nodes(G, pos, node_size = 700)
@@ -135,7 +136,8 @@ class GD(object):
         self.graph = graph
         self.datapackages = 300
         self.packet_loss=0
-    
+        self.source=None
+        self.sink=None
     def _random_source_sink(self):
         """
         make sure there is a path in between source and sink 
@@ -316,14 +318,16 @@ class GD(object):
                 break
         
         if index!=None:
-            #print '-',index
-            #print relay_node, index
             p_old = self._payload(relay_node)
             p_new = self._payload(relay_node) + self._payload(relay_node)*1.0/self._grade_value(node)
             self.graph.node[node]['routing_table'][index]['overload']+=p_old+p_new
             
+    def get_depleted_nodes(self):
+        pass
+            
     def simulate(self):
         source, sink = self._random_source_sink()
+        self.source, self.sink = source, sink
         self._pre_process(sink)
         seq_list=[] #just to track visited nodes
         for i in range(self.datapackages):
@@ -350,15 +354,47 @@ class GD(object):
           seq_list.append(seq)
         
         return seq_list
-            
+
+def calculate_b_th(graph, beta):
+    b_th = 0
+    grade_dict_orig = defaultdict(int)
+    grade_dict_now = defaultdict(int)
+    for i in range(len(graph)):
+        node = graph.node[i]
+        grade_dict_orig[node['grade_value']]+=1
+        if node['node_obj'].get_energy() > 0:
+            grade_dict_now[node['grade_value']]+=1
+    for key in grade_dict_orig.iterkeys():
+        if ((grade_dict_now[key]*1.0)/grade_dict_orig[key]) < beta:
+            b_th+=1
+    return b_th
+    
 def main():
+    import io,json
     n=NetworkDeployer(x=200, y=200, radio_range = 10)
     n.deploy()
     n.build_graph()
     gd=GD(n.graph, datapackages = 300) #pass the built-up graph to GD
     
-    for cycle in range(0, 300):
+    results = []
+    for cycle in range(0, 1):
+        result={}
+        
         seq_list=gd.simulate()
+        result['source']=gd.source
+        result['sink']=gd.sink
+        result['seq']=seq_list
+        result['cycle']=cycle
+        results.append(result)
+        #calculate bth
+        b_th = calculate_b_th(gd.graph, beta = 0.3)
+        if b_th>0: #now replace the nodes using ga
+            pass
+        else:
+            conitnue
+    with io.open('results.json', 'w', encoding='utf-8') as f:
+        f.write(unicode(json.dumps(results, ensure_ascii=False)))
+        
     print gd.packet_loss
 if __name__=="__main__":
     main()
