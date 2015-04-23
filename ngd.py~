@@ -1,128 +1,10 @@
 import networkx as nx
-import logging
 import sys
 import time
 import random
 from tabulate import tabulate #pip install tabulate
 from collections import OrderedDict, defaultdict
 
-def draw_graph(G):
-    pos = nx.spring_layout(G)
-    nx.draw_networkx_nodes(G, pos, node_size = 700)
-    nx.draw_networkx_edges(G, pos, edgelist = G.edges(), edge_color = 'b', style = 'dotted')
-    nx.draw_networkx_labels(G, pos, font_size=10)
-    plt.axis('on')
-    plt.savefig('rendered_graph.png')
-    plt.show()
-try:
-    import matplotlib.pyplot as plt
-except:
-    raise
-logging.basicConfig(filename = 'gd.log', level = logging.DEBUG)
-
-class Node(object):
-
-    def __init__(self, nid, point, energy = 3600):
-        self.id = nid
-        self.co_ordinates=point
-        self.energy = energy
-    
-    def is_alive(self):
-        if self.get_energy() > 0:
-            return True
-        else:
-            return False
-        
-    def consume_tx_energy(self):
-        if self.is_alive():
-            self.energy-=1.6
-            return True
-            
-        raise ValueError("Node is not having sufficient power to transmit data, and considered to be dead")
-    
-    def get_energy(self):
-        return self.energy
-        
-    def __repr__(self):
-        return ("ID: {0} x:{1} y:{2}".format(self.id, self.co_ordinates.x,self.co_ordinates.y))
-    
-    def get_position(self):
-        return {'x':self.co_ordinates.x, 'y':self.co_ordinates.y}
-    
-    def distance(self, other):
-        return self.co_ordinates.get_distance(other.co_ordinates)    
-
-class Point(object):
-    def __init__(self, x=0, y=0):
-        self.x=x
-        self.y=y
-        
-    def get_distance(self, other):
-        return ((self.x-other.x)**2+(self.y-other.y)**2)**(0.5)
-    
-    def __repr__(self):
-        return ("x:{0} y:{1}".format(self.x, self.y))
-   
-    def get_position(self):
-        return {'x':self.x, 'y':self.y}
-
-         
-class NetworkDeployer(object):
-    def __init__(self, x=100, y=100, radio_range=10, min_distance=2):
-        self.x=x
-        self.y=y
-        self.nodes = []
-        self.graph = nx.Graph()
-        self.counter = 0
-        self.min_distance=min_distance
-        self.radio_range = radio_range
-        
-    def _place_nodes(self, i, j, step, max_nodes):
-        
-        """
-        Max nodes is no of nodes that i can palce inside a sub-volume
-        
-        Procedure: Generate a point, and make sure it is having atleast 2 units of distance apart from others, 
-        once the points are selected, just create the new nodes and append them to the self.nodes
-        """
-        points = []
-        for i in range(max_nodes):
-            while(True):
-                t = Point(random.randint(i,i+step), random.randint(j,j+step)) 
-                if all([point.get_distance(t) > self.min_distance for point in points]):
-                    points.append(t)
-                    break
-        
-        for point in points:
-            n=Node(self.counter, point)
-            self.nodes.append(n)
-            self.counter+=1
-            
-    def deploy(self):
-        """
-        take the area (2-Dimensional)
-        and place the nodes
-        """
-        step = 10
-        for i in range(0, self.x, step): 
-            for j in range(0, self.y, step):
-                self._place_nodes(i,j, step, max_nodes = 3)
-    
-    
-    def build_graph(self):
-        """
-        add nodes to the graph, and create the edges in between nodes based on the distance
-        if distance is less than radio_range. 
-        """
-        for node in self.nodes:
-            self.graph.add_node(node.id, node_obj=node)
-        edges = []
-        for i in range(0, len(self.nodes)):
-            for j in range(i+1, len(self.nodes)):
-                if (self.nodes[i].distance(self.nodes[j]) < self.radio_range):
-                    edges.append((self.nodes[i].id, self.nodes[j].id,1))
-        self.graph.add_weighted_edges_from(edges) 
-        #show graph here
         
 class GD(object):
     def __init__(self, graph, datapackages = 300, ):
@@ -316,7 +198,11 @@ class GD(object):
             self.graph.node[node]['routing_table'][index]['overload']+=p_old+p_new
             
     def get_depleted_nodes(self):
-        pass
+        depleted_nodes = []
+        for node in self.graph:
+            if self.graph.node[node]['node_obj'].get_energy() <= 0:
+                depleted_nodes
+            
             
     def simulate(self):
         source, sink = self._random_source_sink()
@@ -367,37 +253,10 @@ class GD(object):
         else:
             for key in grade_dict_orig.iterkeys():
                 ratio=(grade_dict_now[key]*1.0/grade_dict_orig[key])
-                print ratio
                 if ratio < beta:
                     b_th+=1
         return b_th
             
         
     
-def main():
-    import io,json
-    n=NetworkDeployer(x=200, y=200, radio_range = 10)
-    n.deploy()
-    n.build_graph()
-    gd=GD(n.graph, datapackages = 300) #pass the built-up graph to GD
-    
-    results = []
-    for cycle in range(0, 300):
-        result={}
-        
-        seq_list=gd.simulate()
-        result['source']=gd.source
-        result['sink']=gd.sink
-        result['seq']=seq_list
-        result['cycle']=cycle
-        results.append(result)
-        #calculate bth
-        b_th = gd.calculate_b_th(beta = 0.9)
-        if b_th > 0:
-            #call ga algorithm
-    with io.open('results.json', 'w', encoding='utf-8') as f:
-        f.write(unicode(json.dumps(results, ensure_ascii=False)))
-        
-    print gd.packet_loss
-if __name__=="__main__":
-    main()
+
