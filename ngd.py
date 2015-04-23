@@ -257,7 +257,7 @@ class GD(object):
             if self.graph.node[node]['node_obj'].get_energy() > 0:
                 gv=self._grade_value(node)
                 grade_dict_now[gv]+=1
-        #T_i becomes 0 as the ration is less than Beta ( 0<Beta<1)
+        #T_i becomes 0 as the ratio is less than Beta ( 0<Beta<1)
         if len(grade_dict_orig) != len(grade_dict_now):
             return 1
         else:

@@ -24,9 +24,11 @@ def main():
             #call ga algorithm
             depleted_nodes = gd.get_depleted_nodes()
             for d_node in depleted_nodes:
-                print gd.graph.node[d_node]['node_obj'].get_energy(), gd._grade_value(d_node), d_node
+                #print gd.graph.node[d_node]['node_obj'].get_energy(), gd._grade_value(d_node), d_node
+                pass
             print depleted_nodes
             break
+           
     with io.open('results.json', 'w', encoding='utf-8') as f:
         f.write(unicode(json.dumps(results, ensure_ascii=False)))
         
