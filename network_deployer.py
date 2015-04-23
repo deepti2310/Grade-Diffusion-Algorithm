@@ -29,7 +29,28 @@ class NetworkDeployer(object):
         self.counter = 0
         self.min_distance=min_distance
         self.radio_range = radio_range
-        
+
+    def _get_sink(self):
+        """
+        get the sink which is in the middle of the network
+        """
+        #first get mid of x and y
+        x,y = self.x//2,self.y//2
+        p1=Point(x,y)
+        min_dist=float('inf')
+        sink = None
+        #print len(self.nodes)
+        for counter,node in enumerate(self.nodes):
+            p2=node.co_ordinates
+            #print p2, p1
+            
+            d=p1.get_distance(p2)
+            #print d
+            if min_dist > d :
+                min_dist = d
+                sink = node
+        #print sink.id
+        return sink.id
     def _place_nodes(self, i, j, step, max_nodes):
         
         """
@@ -39,7 +60,7 @@ class NetworkDeployer(object):
         once the points are selected, just create the new nodes and append them to the self.nodes
         """
         points = []
-        for i in range(max_nodes):
+        for k in range(max_nodes):
             while(True):
                 t = Point(random.randint(i,i+step), random.randint(j,j+step)) 
                 if all([point.get_distance(t) > self.min_distance for point in points]):
@@ -76,3 +97,12 @@ class NetworkDeployer(object):
                     edges.append((self.nodes[i].id, self.nodes[j].id,1))
         self.graph.add_weighted_edges_from(edges) 
 
+
+def main():
+    n=NetworkDeployer(x=200, y=200, radio_range = 10)
+    n.deploy()
+    n.build_graph()
+    n._get_sink()
+
+if __name__=="__main__":
+    main()

@@ -1,6 +1,6 @@
 class Node(object):
 
-    def __init__(self, nid, point, energy = 3600):
+    def __init__(self, nid, point, energy = 360):
         self.id = nid
         self.co_ordinates=point
         self.energy = energy

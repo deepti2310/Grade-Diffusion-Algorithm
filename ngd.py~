@@ -7,19 +7,23 @@ from collections import OrderedDict, defaultdict
 
         
 class GD(object):
-    def __init__(self, graph, datapackages = 300, ):
+    def __init__(self, graph, datapackages = 300, source = None, sink = None):
         self.graph = graph
         self.datapackages = 300
         self.packet_loss=0
-        self.source=None
-        self.sink=None
+        self.source=source
+        self.sink=sink
     def _random_source_sink(self):
         """
         make sure there is a path in between source and sink 
         """
+        
         no_of_nodes = len(self.graph)
         while(True):
-            source, sink = random.randint(0, no_of_nodes-1),random.randint(0, no_of_nodes-1)
+            if not self.sink:
+                source, sink = random.randint(0, no_of_nodes-1),random.randint(0, no_of_nodes-1)
+            else:
+                source, sink = random.randint(0, no_of_nodes-1), self.sink
             if not self.graph.node[source]['node_obj'].is_alive():
                 continue
             try:
@@ -27,6 +31,7 @@ class GD(object):
                 break
             except: 
                 pass
+        self.source, self.sink = source, sink
         return source, sink
     
     def _overload(self, node):
@@ -156,8 +161,12 @@ class GD(object):
         threshold = self._threshold(node)
         s=sum([entry['overload'] for entry in routing_table])
         if s > threshold:
-            return random.choice(self._neighbors(node))
-        
+            try:
+                return random.choice(self._neighbors(node))
+            except IndexError, e:
+                #if no neigbors just simply skip this step
+                pass
+            
         #Step: 2
         for n,overload in overload_dict.iteritems():
             if overload == 0:
@@ -201,12 +210,13 @@ class GD(object):
         depleted_nodes = []
         for node in self.graph:
             if self.graph.node[node]['node_obj'].get_energy() <= 0:
-                depleted_nodes
+                depleted_nodes.append(node)
+        return depleted_nodes
             
             
     def simulate(self):
         source, sink = self._random_source_sink()
-        self.source, self.sink = source, sink
+        #print source, sink
         self._pre_process(sink)
         seq_list=[] #just to track visited nodes
         for i in range(self.datapackages):
@@ -253,6 +263,7 @@ class GD(object):
         else:
             for key in grade_dict_orig.iterkeys():
                 ratio=(grade_dict_now[key]*1.0/grade_dict_orig[key])
+                print key, grade_dict_now[key], grade_dict_orig[key],ratio
                 if ratio < beta:
                     b_th+=1
         return b_th
