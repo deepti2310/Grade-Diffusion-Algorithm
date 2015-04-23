@@ -354,20 +354,24 @@ class GD(object):
           seq_list.append(seq)
         
         return seq_list
+    def calculate_b_th(self, beta=0.3):
+        b_th = 0
+        grade_dict_orig = defaultdict(int)
+        
+        #filling the values into grade_dict_orig
+        for node in self.graph:
+            gv = self._grade_value(node)
+            grade_dict_orig[gv]+=1
+        #filling the values into grade_dict_now
+        grade_dict_now = defaultdict(int)
+        for node in self.graph:
+            for entry in self.graph.node[node]['routing_table']:
+                relay_node = entry['relay_node']
+                print relay_node
+            #print inside_nodes  
+            #grade_dict_now[len(inside_nodes)]+=1
+        print grade_dict_orig, grade_dict_now
 
-def calculate_b_th(graph, beta):
-    b_th = 0
-    grade_dict_orig = defaultdict(int)
-    grade_dict_now = defaultdict(int)
-    for i in range(len(graph)):
-        node = graph.node[i]
-        grade_dict_orig[node['grade_value']]+=1
-        if node['node_obj'].get_energy() > 0:
-            grade_dict_now[node['grade_value']]+=1
-    for key in grade_dict_orig.iterkeys():
-        if ((grade_dict_now[key]*1.0)/grade_dict_orig[key]) < beta:
-            b_th+=1
-    return b_th
     
 def main():
     import io,json
@@ -387,11 +391,11 @@ def main():
         result['cycle']=cycle
         results.append(result)
         #calculate bth
-        b_th = calculate_b_th(gd.graph, beta = 0.3)
+        b_th = gd.calculate_b_th(beta = 0.9)
         if b_th>0: #now replace the nodes using ga
-            pass
+            print "b_th",b_th
         else:
-            conitnue
+            print "cont b_th", b_th
     with io.open('results.json', 'w', encoding='utf-8') as f:
         f.write(unicode(json.dumps(results, ensure_ascii=False)))
         
