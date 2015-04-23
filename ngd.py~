@@ -53,10 +53,9 @@ class Node(object):
         return self.co_ordinates.get_distance(other.co_ordinates)    
 
 class Point(object):
-    def __init__(self, x=0, y=0, energy = 3600):
+    def __init__(self, x=0, y=0):
         self.x=x
         self.y=y
-        self.energy = energy
         
     def get_distance(self, other):
         return ((self.x-other.x)**2+(self.y-other.y)**2)**(0.5)
@@ -64,12 +63,6 @@ class Point(object):
     def __repr__(self):
         return ("x:{0} y:{1}".format(self.x, self.y))
    
-    def reduce_energy(self, r):
-        self.energy -= r
-    
-    def get_energy(self):
-        return self.energy
-    
     def get_position(self):
         return {'x':self.x, 'y':self.y}
 
@@ -132,7 +125,7 @@ class NetworkDeployer(object):
         #show graph here
         
 class GD(object):
-    def __init__(self, graph, datapackages = 300, node_energy = 3600):
+    def __init__(self, graph, datapackages = 300, ):
         self.graph = graph
         self.datapackages = 300
         self.packet_loss=0
@@ -354,7 +347,7 @@ class GD(object):
           seq_list.append(seq)
         
         return seq_list
-    def calculate_b_th(self, beta=0.3):
+    def calculate_b_th(self, beta=0.9):
         b_th = 0
         grade_dict_orig = defaultdict(int)
         
@@ -365,13 +358,21 @@ class GD(object):
         #filling the values into grade_dict_now
         grade_dict_now = defaultdict(int)
         for node in self.graph:
-            for entry in self.graph.node[node]['routing_table']:
-                relay_node = entry['relay_node']
-                print relay_node
-            #print inside_nodes  
-            #grade_dict_now[len(inside_nodes)]+=1
-        print grade_dict_orig, grade_dict_now
-
+            if self.graph.node[node]['node_obj'].get_energy() > 0:
+                gv=self._grade_value(node)
+                grade_dict_now[gv]+=1
+        #T_i becomes 0 as the ration is less than Beta ( 0<Beta<1)
+        if len(grade_dict_orig) != len(grade_dict_now):
+            return 1
+        else:
+            for key in grade_dict_orig.iterkeys():
+                ratio=(grade_dict_now[key]*1.0/grade_dict_orig[key])
+                print ratio
+                if ratio < beta:
+                    b_th+=1
+        return b_th
+            
+        
     
 def main():
     import io,json
@@ -381,7 +382,7 @@ def main():
     gd=GD(n.graph, datapackages = 300) #pass the built-up graph to GD
     
     results = []
-    for cycle in range(0, 1):
+    for cycle in range(0, 300):
         result={}
         
         seq_list=gd.simulate()
@@ -392,10 +393,8 @@ def main():
         results.append(result)
         #calculate bth
         b_th = gd.calculate_b_th(beta = 0.9)
-        if b_th>0: #now replace the nodes using ga
-            print "b_th",b_th
-        else:
-            print "cont b_th", b_th
+        if b_th > 0:
+            #call ga algorithm
     with io.open('results.json', 'w', encoding='utf-8') as f:
         f.write(unicode(json.dumps(results, ensure_ascii=False)))
         
