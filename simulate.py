@@ -1,5 +1,6 @@
 from network_deployer import NetworkDeployer
 from ngd import GD
+import dill
 def main():
     import io,json
     n=NetworkDeployer(x=200, y=200, radio_range = 10)
@@ -28,7 +29,10 @@ def main():
                 pass
             print depleted_nodes
             break
-           
+
+    with open('my_gd.pik', 'wb') as f:
+        dill.dump(gd,f)
+
     with io.open('results.json', 'w', encoding='utf-8') as f:
         f.write(unicode(json.dumps(results, ensure_ascii=False)))
         

@@ -1,13 +1,19 @@
 
-
+import random
+import sys
+from collections import defaultdict
 class GA(object):
+
     def __init__(self, graph, population_size = 10, elitism_constant = None):
-        self.population_size = population_size
+        self.population_size = population_size or 0
         self.elitism_constant = elitism_constant or population_size//2
         self.graph = graph
-        self.current_chromosomes = None
-        
-    def _get_depleted_nodes(self):
+        self.current_chromosomes = []
+        self.depleted_nodes=[]
+        self.t_n = None
+        self.t_p = 0
+    
+    def get_depleted_nodes(self):
         depleted_nodes = []
         for node in self.graph:
             if self.graph.node[node]['node_obj'].get_energy() <= 0:
@@ -15,12 +21,22 @@ class GA(object):
         return depleted_nodes
     
     def _initialize(self):
+        #initialize the necessary instance variables
+        self.depleted_nodes = self.get_depleted_nodes()
+        #calculate self.t_n
+        self.t_n=len(self.graph)
+        print self.t_n
+        #calculate self.t_p
+        for node in self.graph:
+            self.t_p+=len(self.graph.node[node]['routing_table'])
+        print self.t_p
+        
         for i in range(self.population_size):
             chromosome = []
-            for j in range(len(self._get_depleted_nodes())):
+            for j in range(0,len(self.depleted_nodes)):
                 chromosome.append(random.randint(0,1))
             self.current_chromosomes.append(chromosome)
-    
+
     def _elitisim_selection(self, population, records = 1):
         """
         population is a list of tuples, where each tuple is a combination of (chromosome, fitness value)
@@ -30,12 +46,12 @@ class GA(object):
         population=sorted(population, key = lambda item: item[1], reverse = True) # sort
         return [list(i[0]) for i in population[0:records]]
     
-    def _calculate_cumulatiave_probability(self, population):
+    def _calculate_cumulative_probability(self, population):
         """
         population is a list of tuples, where each tuple is a combination of (chromosome, fitness value)
         
         """
-        sigma = sum([ fitness for chromsome, fitness in populaton])
+        sigma = sum([ fitness for chromsome, fitness in population])
         #now calculate the probability mass function
         pmf = []
         for chromosome, fitness in population[:-1]:
@@ -48,7 +64,7 @@ class GA(object):
         #now calculate cumulative distribution function
         cdf = []
         for counter, (chromosome, prob) in enumerate(pmf):
-            cdf.append((chromosome, sum([j[1] for j in pmf[:i+1]])))
+            cdf.append((chromosome, sum([j[1] for j in pmf[:counter+1]])))
         return cdf
 
     def _select_pair(self, cdf):
@@ -88,40 +104,70 @@ class GA(object):
                 n = self._mutation(j)
                 new_population.append(n)
         return new_population[:records] 
-    def _calculate_fitness_function(self, chromosome):
-        """
-        Implemeting some dummy fitness function
-        2*x1 - 2.x2 + 3*x3 + 4*x4 - 5*x5 +2*x6 - 3*x7 + 4*x8 + 9*x9 + 10*x10
-        input = [1,1,0,1,0,1,1,1,1,1]
-        output = 2*1 -2*1 + 3*0+4*1-5*0+2*1-3*1+4*1+9*1+10*1 = 2-2+0+4-0+2-3+4+9+10=26
-        """
-        #fitness value shouldnt be a negative number
-        factors_list = [2,-2,30,-4,5,2,-3,4,-9,10]
-        s=sum([i*j for i,j in zip(chromosome, factors_list)])
-        if s>0:
-            return tuple(chromosome), s
-        else:
-            return tuple(chromosome), 0
-              
-    def _get_solution(self, iterations = 1):
+    
+    def _get_grade_value(self, node):
+        return self.graph.node[node]['grade_value']
+    
+    def _get_reusable_routing_paths(self, node):
+        return self.graph.node[node]['routing_table'] 
+
+    def _calculate_fitness_function(self, chromosome):    
+        f_n=0 #fitness value
+        const = (1.0/self.t_p)/(1.0/self.t_n)
+        #print zip(self.depleted_nodes, chromosome)
+        replaced_nodes = [ node for node, flag in zip(self.depleted_nodes, chromosome) if flag == 1]
+        #print replaced_nodes
+        replaced_nodes_by_grade_value = defaultdict(list)
+        for node in replaced_nodes:
+            #get grade value
+            gv=self._get_grade_value(node)
+            replaced_nodes_by_grade_value[gv].append(node)
+        #print replaced_nodes_by_grade_value
+        for gv, nodes_list in replaced_nodes_by_grade_value.iteritems():
+            number_of_reusable_routing_paths = 0
+            for node in nodes_list:
+                number_of_reusable_routing_paths+=len(self._get_reusable_routing_paths(node))
+            #print gv
+            f_n += const*(1.0/gv)*(number_of_reusable_routing_paths*1.0/len(nodes_list))
+        return chromosome, f_n
+        
+    def _get_solution(self, iterations = 10):
         self._initialize()
         for i in range(iterations):
             population = []
-            for chromosome in self.current_population:
-                key, value = self._calculate_fitness_function(chromosome)
-                population.append((key, value))
-                new_population = self._elitisim_selection(population = population, records = self.elitism_constant)
-                new_population.extend(self._roulette_selection(population, records = self.population_size - self.elitism_constant))
-                self.current_population = new_population
+            for chromosome in self.current_chromosomes:
+                c, f_n = self._calculate_fitness_function(chromosome)
+                population.append((c, f_n))
+            for p in population:
+                #print p            
+                pass
+            new_population = self._elitisim_selection(population = population, records = self.elitism_constant)
+            #print '-'*80
+            for p in new_population:
+                #print p, self._calculate_fitness_function(p)
+                pass
+            new_population.extend(self._roulette_selection(population, records = self.population_size - self.elitism_constant))
+            self.current_chromosomes = new_population
         c_f=[]
-        for chromosome in self.current_population:
+        for chromosome in self.current_chromosomes:
              chromosome,fitness_value = self._calculate_fitness_function(chromosome)
              c_f.append((chromosome,fitness_value))
         c_f=sorted(c_f, key = lambda item:item[1], reverse = True)
         return c_f[0]
-def main():
-    pass
 
+import dill
+def main():
+    with open('my_gd.pik', 'rb') as f:
+        gd = dill.load(f)
+    ga = GA(gd.graph)
+    print "****************"
+    sol= ga._get_solution()
+    replaced_nodes = [ node for node, flag in zip(ga.get_depleted_nodes(), sol[0]) if flag == 1]
+    for node in replaced_nodes:
+        print gd.graph.node[node]['grade_value']
+    print '-'*9
+    for node in replaced_nodes:
+        print ga.graph.node[node]['grade_value']
 if __name__ == "__main__":
     main()
         
