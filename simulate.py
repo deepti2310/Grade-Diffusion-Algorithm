@@ -1,5 +1,6 @@
 from network_deployer import NetworkDeployer
 from ngd import GD
+from nga import GA
 import dill
 def main():
     import io,json
@@ -29,13 +30,17 @@ def main():
                 pass
             print depleted_nodes
             break
-
+    """
     with open('my_gd.pik', 'wb') as f:
         dill.dump(gd,f)
-
+    """
     with io.open('results.json', 'w', encoding='utf-8') as f:
         f.write(unicode(json.dumps(results, ensure_ascii=False)))
         
-    print gd.packet_loss
+    ga = GA(gd.graph)
+    print "****************"
+    sol= ga._get_solution()
+    replaced_nodes = [ node for node, flag in zip(ga.get_depleted_nodes(), sol[0]) if flag == 1]
+    print replaced_nodes
 if __name__=="__main__":
     main()
