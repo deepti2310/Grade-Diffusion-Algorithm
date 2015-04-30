@@ -10,7 +10,7 @@ class GA(object):
         self.graph = graph
         self.current_chromosomes = []
         self.depleted_nodes=[]
-        self.t_n = None
+        self.t_n = 0
         self.t_p = 0
     
     def get_depleted_nodes(self):
@@ -23,13 +23,16 @@ class GA(object):
     def _initialize(self):
         #initialize the necessary instance variables
         self.depleted_nodes = self.get_depleted_nodes()
+        #print self.depleted_nodes
         #calculate self.t_n
         self.t_n=len(self.graph)
-        print self.t_n
+        #print self.t_n
         #calculate self.t_p
         for node in self.graph:
-            self.t_p+=len(self.graph.node[node]['routing_table'])
-        print self.t_p
+            #print self.graph.node[node]['routing_table']
+            entries=len(self.graph.node[node]['routing_table']) or 0
+            self.t_p+=entries
+        #print self.t_p
         
         for i in range(self.population_size):
             chromosome = []
@@ -108,14 +111,22 @@ class GA(object):
     def _get_grade_value(self, node):
         return self.graph.node[node]['grade_value']
     
-    def _get_reusable_routing_paths(self, node):
-        return self.graph.node[node]['routing_table'] 
+    def _get_reusable_routing_paths(self, node, replaced_nodes=None, unreplaced_nodes = None):
+        entries = self.graph.node[node]['routing_table'] 
+        reusable_paths = []
+        for entry in entries:
+            relay_node = entry['relay_node']
+            if relay_node not in unreplaced_nodes:
+                reusable_paths.append(entry)
+
+        return reusable_paths
 
     def _calculate_fitness_function(self, chromosome):    
         f_n=0 #fitness value
         const = (1.0/self.t_p)/(1.0/self.t_n)
         #print zip(self.depleted_nodes, chromosome)
         replaced_nodes = [ node for node, flag in zip(self.depleted_nodes, chromosome) if flag == 1]
+        unreplaced_nodes = [ node for node, flag in zip(self.depleted_nodes, chromosome) if flag == 1]        
         #print replaced_nodes
         replaced_nodes_by_grade_value = defaultdict(list)
         for node in replaced_nodes:
@@ -126,9 +137,10 @@ class GA(object):
         for gv, nodes_list in replaced_nodes_by_grade_value.iteritems():
             number_of_reusable_routing_paths = 0
             for node in nodes_list:
-                number_of_reusable_routing_paths+=len(self._get_reusable_routing_paths(node))
+                number_of_reusable_routing_paths+=len(self._get_reusable_routing_paths(node, replaced_nodes=replaced_nodes,unreplaced_nodes=unreplaced_nodes ))
             #print gv
             f_n += const*(1.0/gv)*(number_of_reusable_routing_paths*1.0/len(nodes_list))
+        #print chromosome,f_n
         return chromosome, f_n
         
     def _get_solution(self, iterations = 10):
@@ -163,11 +175,11 @@ def main():
     print "****************"
     sol= ga._get_solution()
     replaced_nodes = [ node for node, flag in zip(ga.get_depleted_nodes(), sol[0]) if flag == 1]
+    print '-'*70
     for node in replaced_nodes:
-        print gd.graph.node[node]['grade_value']
-    print '-'*9
-    for node in replaced_nodes:
-        print ga.graph.node[node]['grade_value']
+        print node, ga.graph.node[node]['grade_value'],'-',
+        pass
+    print replaced_nodes
 if __name__ == "__main__":
     main()
         
