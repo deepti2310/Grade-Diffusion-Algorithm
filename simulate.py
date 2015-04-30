@@ -42,6 +42,6 @@ def main():
     sol= ga._get_solution()
     replaced_nodes = [ node for node, flag in zip(ga.get_depleted_nodes(), sol[0]) if flag == 1]
     print "replaced_nodes:", replaced_nodes
-    
+    print "****************************"
 if __name__=="__main__":
     main()
