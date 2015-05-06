@@ -6,7 +6,7 @@ from tabulate import tabulate #pip install tabulate
 from collections import OrderedDict, defaultdict
 #8673425
         
-class GD(object):
+class LD(object):
     def __init__(self, graph, datapackages = 300, source = None, sink = None):
         self.graph = graph
         self.datapackages = 300
@@ -145,46 +145,12 @@ class GD(object):
     
     def _select_relay_node(self, node):
         """
-        Select a relay node to do data transfer
-        1. First retrieve routing_table
-        1.a if all the relay nodes overload exceeds threshold, choose a random neighbor
-        2. capture the relay_nodes and its their payloads (return if there is any relay load with payload 0
-        3. choose one relay node based on probability
-        4. return the selected relay node
         """
         
         #Step:1
         routing_table = self._routing_table(node)
-        overload_dict = OrderedDict([(entry['relay_node'], entry['overload'])for entry in routing_table])
-        
-        #step 1.a:
-        threshold = self._threshold(node)
-        s=sum([entry['overload'] for entry in routing_table])
-        if s > threshold:
-            try:
-                return random.choice(self._neighbors(node))
-            except IndexError, e:
-                #if no neigbors just simply skip this step
-                pass
-            
-        #Step: 2
-        for n,overload in overload_dict.iteritems():
-            if overload == 0:
-                return n 
-        #else
-        cdf_dict = OrderedDict()
-        overload_sum=sum([1.0/overload for n,overload in overload_dict.iteritems()]) 
-        
-        if overload_sum == 0:
-            return random.choice(list(overload_dict.iterkeys()))
-        #step 3 and Step 4
-        r=random.random()
-        s=0
-        for n, overload in overload_dict.iteritems():
-            s+=(1.0/overload)
-            if r <= s/overload_sum:
-                return n
-    
+        relay_nodes = [entry['relay_node'] for entry in routing_table]
+        return random.choice(relay_nodes)
     def _routing_table(self, node):
         return self.graph.node[node]['routing_table']
     
