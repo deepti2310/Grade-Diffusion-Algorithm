@@ -30,7 +30,7 @@ plt.show()
 
 def main():
     import io,json
-    n=NetworkDeployer(x=200, y=200, radio_range = 10)
+    n=NetworkDeployer(x=200, y=200, radio_range = 30)
     n.deploy()
     n.build_graph()
     sink = n._get_sink()
@@ -56,7 +56,7 @@ def main():
     results = []
     ld_results = []
     ggd_results = []
-    for cycle in range(0, 500):
+    for cycle in range(0, 600):
         source, sink=gd._random_source_sink()
         result={}
         ld_result={}
@@ -143,11 +143,11 @@ def main():
     ###########################################################################
     
     line_chart = pygal.Line()
-    line_chart.title = 'Energy Consumption'
+    line_chart.title = 'Energy Consumption between GD and GGD'
     line_chart.x_labels = map(str, range(len(gd_energy_consumption)))
     line_chart.add('GD Energy Consumption in mw', [cycle['energy_consumption'] for cycle in gd_energy_consumption])
     line_chart.add('GGD Energy Consumption in mw',  [cycle['energy_consumption'] for cycle in ggd_energy_consumption])
-    line_chart.add('LD Energy Consumption in mw',  [cycle['energy_consumption'] for cycle in ld_energy_consumption])
+    #line_chart.add('LD Energy Consumption in mw',  [cycle['energy_consumption'] for cycle in ld_energy_consumption])
     line_chart.render_to_png('energy_consumption.png')
 
     ###############################################################################
