@@ -271,7 +271,7 @@ class GD(object):
                 if ratio < beta:
                     b_th+=1
         return b_th
-            
+    
         
     
 
