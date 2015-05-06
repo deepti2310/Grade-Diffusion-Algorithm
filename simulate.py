@@ -121,7 +121,7 @@ def main():
     
     line_chart = pygal.Line()
     line_chart.title = 'packet_loss'
-    line_chart.x_labels = map(str, range(len(gd_packet_loss)))
+    #line_chart.x_labels = map(str, range(len(gd_packet_loss)))
     line_chart.add('GD Packet Loss', [cycle['packet_loss'] for cycle in gd_packet_loss])
     line_chart.add('GGD Packet Loss',  [cycle['packet_loss'] for cycle in ggd_packet_loss])
     line_chart.add('LD Packet Loss',  [cycle['packet_loss'] for cycle in ld_packet_loss])
@@ -132,7 +132,7 @@ def main():
     
     line_chart = pygal.Line()
     line_chart.title = 'Depleted Nodes'
-    line_chart.x_labels = map(str, range(len(gd_depleted_nodes)))
+    #line_chart.x_labels = map(str, range(len(gd_depleted_nodes)))
     line_chart.add('GD Depleted Nodes', [cycle['depleted_nodes'] for cycle in gd_depleted_nodes])
     line_chart.add('GGD Depleted Nodes',  [cycle['depleted_nodes'] for cycle in ggd_depleted_nodes])
     line_chart.add('LD Depleted Nodes',  [cycle['depleted_nodes'] for cycle in ld_depleted_nodes])
@@ -144,7 +144,7 @@ def main():
     
     line_chart = pygal.Line()
     line_chart.title = 'Energy Consumption between GD and GGD'
-    line_chart.x_labels = map(str, range(len(gd_energy_consumption)))
+    #line_chart.x_labels = map(str, range(len(gd_energy_consumption)))
     line_chart.add('GD Energy Consumption in mw', [cycle['energy_consumption'] for cycle in gd_energy_consumption])
     line_chart.add('GGD Energy Consumption in mw',  [cycle['energy_consumption'] for cycle in ggd_energy_consumption])
     #line_chart.add('LD Energy Consumption in mw',  [cycle['energy_consumption'] for cycle in ld_energy_consumption])
