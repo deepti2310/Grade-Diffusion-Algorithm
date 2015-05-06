@@ -4,7 +4,12 @@ import time
 import random
 from tabulate import tabulate #pip install tabulate
 from collections import OrderedDict, defaultdict
-#8673425
+"""
+        Here in this i am proposing not to select a neighbor when it reaches certain threshold as described in the paper.
+        although it serves the purpose of minimizing the depleted nodes, but its not global optimized solution, 
+        in reality source, sink changes constantly in a given simulation/real environment, so taking neighbors in consideration
+        further depletes the neighbors nodes rapidly which are very near to the sink
+        """
         
 class GGD(object):
     def __init__(self, graph, datapackages = 300, source = None, sink = None):
