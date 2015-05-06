@@ -40,9 +40,9 @@ def main():
     ld._pre_process(sink)
     ggd = GGD(copy.deepcopy(n.graph), datapackages = 300,sink = sink) #pass the built-up graph to GGD
     
-    gd_power_consumption = []
-    ld_power_consumption = []
-    ggd_power_consumption = []
+    gd_energy_consumption = []
+    ld_energy_consumption = []
+    ggd_energy_consumption = []
     
     gd_packet_loss = []
     ld_packet_loss = []
@@ -56,7 +56,7 @@ def main():
     results = []
     ld_results = []
     ggd_results = []
-    for cycle in range(0, 300):
+    for cycle in range(0, 500):
         source, sink=gd._random_source_sink()
         result={}
         ld_result={}
@@ -95,8 +95,15 @@ def main():
         ld_depleted_nodes.append({'cycle':cycle, 'depleted_nodes':len(ld.get_depleted_nodes())})
         ggd_depleted_nodes.append({'cycle':cycle, 'depleted_nodes':len(ggd.get_depleted_nodes())})
 
+        #total energy consumption
+        gd_energy_consumption.append({'cycle':cycle, 'energy_consumption':gd.total_energy_consumption()})
+        ld_energy_consumption.append({'cycle':cycle, 'energy_consumption':ld.total_energy_consumption()})
+        ggd_energy_consumption.append({'cycle':cycle, 'energy_consumption':ggd.total_energy_consumption()})
+
+
+
         #calculate bth
-        b_th = gd.calculate_b_th(beta = 0.9)
+        b_th = gd.calculate_b_th(beta = 0.5)
         if b_th > 0:
             depleted_nodes = gd.get_depleted_nodes()
             for d_node in depleted_nodes:
@@ -130,6 +137,18 @@ def main():
     line_chart.add('GGD Depleted Nodes',  [cycle['depleted_nodes'] for cycle in ggd_depleted_nodes])
     line_chart.add('LD Depleted Nodes',  [cycle['depleted_nodes'] for cycle in ld_depleted_nodes])
     line_chart.render_to_png('depleted_nodes.png')
+
+    ###############################################################################
+    
+    ###########################################################################
+    
+    line_chart = pygal.Line()
+    line_chart.title = 'Energy Consumption'
+    line_chart.x_labels = map(str, range(len(gd_energy_consumption)))
+    line_chart.add('GD Energy Consumption in mw', [cycle['energy_consumption'] for cycle in gd_energy_consumption])
+    line_chart.add('GGD Energy Consumption in mw',  [cycle['energy_consumption'] for cycle in ggd_energy_consumption])
+    line_chart.add('LD Energy Consumption in mw',  [cycle['energy_consumption'] for cycle in ld_energy_consumption])
+    line_chart.render_to_png('energy_consumption.png')
 
     ###############################################################################
     

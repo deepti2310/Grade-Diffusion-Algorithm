@@ -4,7 +4,8 @@ class Node(object):
         self.id = nid
         self.co_ordinates=point
         self.energy = energy
-    
+        self.init_energy = energy
+          
     def is_alive(self):
         if self.get_energy() > 0:
             return True

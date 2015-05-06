@@ -268,6 +268,13 @@ class GGD(object):
                     b_th+=1
         return b_th
             
+    def total_energy_consumption(self):
+        energy = 0
+        init_energy=0
+        for node in self.graph:
+            energy+=self.graph.node[node]['node_obj'].get_energy()
+            init_energy+=self.graph.node[node]['node_obj'].init_energy
+        return init_energy-energy
         
     
 
